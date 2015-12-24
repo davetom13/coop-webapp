@@ -1,0 +1,115 @@
+<html>
+<head>
+    <title>Coop Control</title>
+    <script src="libs/jquery/2.1.4/jquery-min.js" type="text/javascript"></script>
+    <script type = "text/javascript">
+        var IMG_STREAM = "http://" + window.location.hostname + ":8080/?action=stream";
+
+        function refreshData() {
+            if (!document.hidden) {
+                $.getJSON('rest/coops/0', function(coop) {
+                    $('#uptime').html(getUptimeString(coop.uptime));
+                    $('#lightStatus').html(coop.lights[0].state);
+                    $('#lightNext').html(buildNextString(coop.lights[0].nextScheduledCommand));
+                    $('#doorStatus').html(coop.doors[0].state);
+                    $('#doorNext').html(buildNextString(coop.doors[0].nextScheduledCommand));
+                });
+            }
+        }
+
+        function visibilityChanged() {
+            $('#camImg').attr('src', document.hidden ?
+                    "http://" + window.location.hostname + ":8080/?action=snapshot" : IMG_STREAM);
+        }
+
+        function buildNextString(scheduledCommand) {
+            var command = scheduledCommand.command.command;
+            var scheduledDate = new Date(scheduledCommand.scheduledTime);
+            return command + " at " + scheduledDate.toLocaleTimeString() + " on "
+                    + scheduledDate.toDateString();
+        }
+
+        function getUptimeString(uptimeCount) {
+            var millis = uptimeCount % 1000;
+            uptimeCount = (uptimeCount - millis) / 1000;
+            var seconds = uptimeCount % 60;
+            uptimeCount = (uptimeCount - seconds) / 60;
+            var minutes = uptimeCount % 60;
+            uptimeCount = (uptimeCount - minutes) / 60;
+            var hours = uptimeCount % 24;
+            var days = (uptimeCount - hours) / 24;
+
+            var uptimeString = days + " days, " + hours + " hours, " + minutes + " minutes, "
+                    + seconds + " seconds";
+            return uptimeString;
+        }
+
+        $(document).ready(function() {
+            $('#camImg').attr('src', IMG_STREAM);
+
+            window.setInterval(refreshData, 1000);
+            document.addEventListener("visibilitychange", visibilityChanged)
+
+            $("#lightOn").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/lights/0',
+                    data:'{"command":"ON"}',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#lightOff").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/lights/0',
+                    data:'{"command":"OFF"}',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#doorOpen").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/doors/0',
+                    data:'{"command":"OPEN"}',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#doorClose").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/doors/0',
+                    data:'{"command":"CLOSE"}',
+                    contentType:'application/json'
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+
+<img id="camImg" src="" width="640"/>
+
+<P>
+Uptime: <span id="uptime"> </span>
+</P>
+
+<P>
+    Light: <span id="lightStatus"> </span> :
+        <input type="button" id="lightOn" value="On" />
+        <input type="button" id="lightOff" value="Off" />
+    <BR>
+    Next: <span id="lightNext"> </span>
+</P>
+
+<P>
+    Door: <span id="doorStatus"> </span> :
+       <input type="button" id="doorOpen" value="Open" />
+       <input type="button" id="doorClose" value="Close" />
+    <BR>
+    Next: <span id="doorNext"> </span>
+</P>
+</body>
+</html>
