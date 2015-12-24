@@ -23,6 +23,7 @@ This web application provides the following functionality:
 ## Software Dependencies
 * [Pi4J](http://pi4j.com/) - Provides Java bindings for access to the I2C bus (among other things) on the Pi
 * [Jersey](https://jersey.java.net/) - Provides a REST API framework to simplify implementation. I'm using the Jersey provided Jackson for object mapping duties (Java beans <-> JSON)
+* [sunrisesunsetlib-java](http://mikereedell.github.io/sunrisesunsetlib-java/) - Provides the calculations for determining sunrise / sunset times
 
 ## Building
 This is a [gradle](http://gradle.org/) project and supports the [gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html), so after cloning the repository just run "sh gradlew war" on unix-based systems or "gradlew.bat war" on Windows in the CoopControl directory to generate the war file to use in your servlet container (CoopControl/build/libs/CoopControl.war). This will download gradle (if necessary), download any dependencies (if necessary), and then build the war file.
