@@ -1,9 +1,14 @@
 package org.seanano.coop.model;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Bean class representation of a command to be performed on a door.
  */
+@ApiModel(description = "Command for controlling a door")
 public class DoorCommand implements SchedulableCommand {
+    @ApiModelProperty(value = "Door command to be executed.", required = true)
     private Command command;
 
     /**

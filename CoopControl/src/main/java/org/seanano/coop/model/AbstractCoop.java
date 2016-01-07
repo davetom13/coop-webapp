@@ -22,7 +22,7 @@ public abstract class AbstractCoop implements Coop {
     }
 
     @Override
-    public Collection<? extends Door> getDoors() {
+    public Collection<Door> getDoors() {
         return doorMap.values();
     }
 
@@ -32,7 +32,7 @@ public abstract class AbstractCoop implements Coop {
     }
 
     @Override
-    public Collection<? extends Light> getLights() {
+    public Collection<Light> getLights() {
         return lightMap.values();
     }
 

@@ -1,12 +1,19 @@
 package org.seanano.coop.model;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Bean class representing a command to be performed at a specific time.
  *
  * @param <T> type of command that is scheduled.
  */
+@ApiModel(description = "Command that has been scheduled")
 public class ScheduledCommand<T extends SchedulableCommand> {
+    @ApiModelProperty(value = "Command to be executed", required = true)
     private T command;
+    
+    @ApiModelProperty(value = "Time when command is to be executed, in millis since the epoch", required = true)
     private long scheduledTime;
 
     /**

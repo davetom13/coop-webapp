@@ -2,16 +2,21 @@ package org.seanano.coop.model;
 
 import java.util.Collection;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Interface for a representation of a chicken coop.
  */
+@ApiModel(description = "Top level coop object")
 public interface Coop extends Identifiable {
     /**
      * Gets all of the doors of this coop.
      * 
      * @return all of the doors of this coop
      */
-    public Collection<? extends Door> getDoors();
+    @ApiModelProperty(value = "All of the coop's doors", required = true)
+    public Collection<Door> getDoors();
 
     /**
      * Gets a specific door.
@@ -26,7 +31,8 @@ public interface Coop extends Identifiable {
      * 
      * @return all of the lights of this coop
      */
-    public Collection<? extends Light> getLights();
+    @ApiModelProperty(value = "All of the coop's lights", required = true)
+    public Collection<Light> getLights();
 
     /**
      * Gets a specific light.
@@ -41,6 +47,7 @@ public interface Coop extends Identifiable {
      * 
      * @return uptime of embedded firmware in millis
      */
+    @ApiModelProperty(value = "Embedded device's uptime in milliseconds", required = true)
     public long getUptime();
 
     /**

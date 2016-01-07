@@ -16,9 +16,16 @@ import org.seanano.coop.model.Coop;
 import org.seanano.coop.model.Light;
 import org.seanano.coop.model.LightCommand;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 /**
  * Rest service handling coop specific light requests.
  */
+@Api(value = "Light")
 @Path("/coops/{coopId}/lights")
 public class LightService {
     private Coop coop;
@@ -29,7 +36,8 @@ public class LightService {
      * @param coopId identifier of coop
      * @throws Exception if coop was not found or unable to retrieve
      */
-    public LightService(@PathParam("coopId") Integer coopId) throws Exception {
+    public LightService(@ApiParam(value = "Coop identifier", required = true) @PathParam("coopId") Integer coopId)
+            throws Exception {
         if (coopId != 0) {
             throw new WebApplicationException(404);
         }
@@ -43,21 +51,25 @@ public class LightService {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Collection<? extends Light> handleGetLights() {
+    @ApiOperation(value = "Retrieve information about all the lights in the specified coop.", response = Light.class,
+            responseContainer = "List")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop not found."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop.")})
+    public Collection<Light> handleGetLights() {
         return coop.getLights();
     }
 
-    /**
-     * Gets a specific light for the coop.
-     * 
-     * @param id identifier of light for the coop
-     * @return requested light
-     * @throws Exception if requested light not found
-     */
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Light handleGetLight(@PathParam("id") Integer id) throws Exception {
+    @ApiOperation(value = "Retrieve information about a specific light in the specified coop.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop or light not found."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop.")})
+    public Light handleGetLight(
+            @ApiParam(value = "Coop specific light identifier", required = true) @PathParam("id") Integer id)
+            throws Exception {
         Light light = coop.getLight(id);
         if (light == null) {
             throw new WebApplicationException(404);
@@ -65,16 +77,14 @@ public class LightService {
         return light;
     }
 
-    /**
-     * Performs a command on a specific light for the coop.
-     * 
-     * @param id identifier of light for the coop
-     * @param command command to perform
-     * @throws Exception if requested light not found or unable to perform the command
-     */
     @POST
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Initiates a command on a specific light in the specified coop.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop or light not found."),
+            @ApiResponse(code = 405, message = "Light is not controllable."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop or performing the command.")})
     public void handleLightCommand(@PathParam("id") Integer id, LightCommand command) throws Exception {
         Light light = coop.getLight(id);
         if (light == null) {

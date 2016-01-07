@@ -16,9 +16,16 @@ import org.seanano.coop.model.Coop;
 import org.seanano.coop.model.Door;
 import org.seanano.coop.model.DoorCommand;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 /**
  * Rest service handling coop specific door requests.
  */
+@Api(value = "Door")
 @Path("/coops/{coopId}/doors")
 public class DoorService {
     private Coop coop;
@@ -29,35 +36,34 @@ public class DoorService {
      * @param coopId identifier of coop
      * @throws Exception if coop was not found or unable to retrieve
      */
-    public DoorService(@PathParam("coopId") Integer coopId) throws Exception {
+    public DoorService(@ApiParam(value = "Coop identifier", required = true) @PathParam("coopId") Integer coopId)
+            throws Exception {
         if (coopId != 0) {
             throw new WebApplicationException(404);
         }
         coop = CoopFactory.getCoop();
     }
 
-    /**
-     * Gets all the doors associated with the coop.
-     * 
-     * @return all doors associated with coop
-     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Collection<? extends Door> handleGetDoors() {
+    @ApiOperation(value = "Retrieve information about all the doors in the specified coop.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop not found."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop.")})
+    public Collection<Door> handleGetDoors() {
         return coop.getDoors();
     }
 
-    /**
-     * Gets a specific door for the coop.
-     * 
-     * @param id identifier of door for the coop
-     * @return requested door
-     * @throws Exception if requested door not found
-     */
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Door handleGetDoor(@PathParam("id") Integer id) throws Exception {
+    @ApiOperation(value = "Retrieve information about a specific door in the specified coop.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop or door not found."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop.")})
+    public Door handleGetDoor(
+            @ApiParam(value = "Coop specific door identifier", required = true) @PathParam("id") Integer id)
+            throws Exception {
         Door door = coop.getDoor(id);
         if (door == null) {
             throw new WebApplicationException(404);
@@ -65,17 +71,19 @@ public class DoorService {
         return door;
     }
 
-    /**
-     * Performs a command on a specific door for the coop.  Note this call will return once the command is started.
-     * 
-     * @param id identifier of door for the coop
-     * @param command command to perform
-     * @throws Exception if requested door not found or unable to perform the command
-     */
     @POST
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void handleDoorCommand(@PathParam("id") Integer id, DoorCommand command) throws Exception {
+    @ApiOperation(value = "Initiates a command on a specific door in the specified coop.", response = Door.class,
+            responseContainer = "List")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop or door not found."),
+            @ApiResponse(code = 405, message = "Door is not controllable."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop or performing the command.")})
+    public void handleDoorCommand(
+            @ApiParam(value = "Coop specific door identifier", required = true) @PathParam("id") Integer id,
+            @ApiParam(value = "Command to perform", required = true) DoorCommand command)
+            throws Exception {
         Door door = coop.getDoor(id);
         if (door == null) {
             throw new WebApplicationException(404);

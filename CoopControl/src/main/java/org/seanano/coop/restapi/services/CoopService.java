@@ -13,34 +13,36 @@ import javax.ws.rs.core.MediaType;
 import org.seanano.coop.hardware.CoopFactory;
 import org.seanano.coop.model.Coop;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 /**
  * Rest service handling top level coop calls.
  */
+@Api(value = "Coop")
 @Path("/coops")
 public class CoopService {
-    /**
-     * Gets all of the known coops.
-     * 
-     * @return collection of known coops
-     * @throws Exception if unable to get the coops
-     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Collection<? extends Coop> handleGetCoop() throws Exception {
+    @ApiOperation(value = "Retrieve information about all the attached coops.",  response = Coop.class,
+            responseContainer = "List")
+    @ApiResponse(code = 500, message = "An error occurred getting info about the coops.")
+    public Collection<Coop> handleGetCoop() throws Exception {
         return Arrays.asList(new Coop[] { CoopFactory.getCoop() });
     }
 
-    /**
-     * Gets a specific coop.
-     * 
-     * @param id identifier of the coop to retrieve
-     * @return specified coop
-     * @throws Exception if coop was not found or unable to retrieve
-     */
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Coop handleGetCoop(@PathParam("id") Integer id) throws Exception {
+    @ApiOperation(value = "Retrieve information about a specific coop.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Coop not found."),
+            @ApiResponse(code = 500, message = "An error occurred getting info about the coop.")})
+    public Coop handleGetCoop(@ApiParam(value = "Coop identifier", required = true) @PathParam("id") Integer id)
+            throws Exception {
         if (id != 0) {
             throw new WebApplicationException(404);
         }

@@ -64,13 +64,13 @@ class ArduinoCoop extends AbstractCoop {
     }
 
     @Override
-    public synchronized Collection<? extends Door> getDoors() { return super.getDoors(); };
+    public synchronized Collection<Door> getDoors() { return super.getDoors(); };
 
     @Override
     public synchronized Door getDoor(Integer id) { return super.getDoor(id); }
 
     @Override
-    public synchronized Collection<? extends Light> getLights() { return super.getLights(); }
+    public synchronized Collection<Light> getLights() { return super.getLights(); }
 
     @Override
     public synchronized Light getLight(Integer id) { return super.getLight(id); }
