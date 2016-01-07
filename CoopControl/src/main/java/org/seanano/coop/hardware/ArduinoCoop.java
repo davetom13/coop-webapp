@@ -2,10 +2,8 @@ package org.seanano.coop.hardware;
 
 import java.security.InvalidParameterException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.seanano.coop.model.Coop;
+import org.seanano.coop.model.AbstractCoop;
 import org.seanano.coop.model.Door;
 import org.seanano.coop.model.DoorCommand;
 import org.seanano.coop.model.DoorState;
@@ -20,7 +18,7 @@ import com.pi4j.io.i2c.I2CFactory;
 /**
  * Coop implementation using the <a href="https://github.com/seanano/coop-alamode">coop-alamode</a> arduino firmware.
  */
-class ArduinoCoop implements Coop {
+class ArduinoCoop extends AbstractCoop {
     private static final int ARDUINO_I2C_ADDRESS = 0x10;
 
     private static final int I2C_DOOR_COMMAND_MASK = 0x10;
@@ -41,11 +39,8 @@ class ArduinoCoop implements Coop {
     private static final int LIGHT_STATE_ON = 1;
     private static final int LIGHT_STATE_OFF = 0;
 
-    private Integer id;
     private ScheduledDoor door;
     private ScheduledLight light;
-    private Map<Integer, ScheduledDoor> doorMap = new HashMap<>();
-    private Map<Integer, ScheduledLight> lightMap = new HashMap<>();
     private I2CDevice arduinoI2C;
     private long uptime;
 
@@ -56,31 +51,29 @@ class ArduinoCoop implements Coop {
      * @throws Exception if unable to initialize communication with coop
      */
     ArduinoCoop(int id) throws Exception {
-        this.id = id;
+        super(id);
+        
         I2CBus bus = I2CFactory.getInstance(I2CBus.BUS_1);
         arduinoI2C = bus.getDevice(ARDUINO_I2C_ADDRESS);
 
         door = new ScheduledDoor(0, "Pop door");
-        doorMap.put(0, door);
+        updateDoor(door);
 
         light = new ScheduledLight(0, "Main Light");
-        lightMap.put(0, light);
+        updateLight(light);
     }
 
     @Override
-    public synchronized Integer getId() { return id; }
+    public synchronized Collection<? extends Door> getDoors() { return super.getDoors(); };
 
     @Override
-    public synchronized Collection<? extends Door> getDoors() { return doorMap.values(); };
+    public synchronized Door getDoor(Integer id) { return super.getDoor(id); }
 
     @Override
-    public synchronized Door getDoor(Integer id) { return doorMap.get(id); }
+    public synchronized Collection<? extends Light> getLights() { return super.getLights(); }
 
     @Override
-    public synchronized Collection<? extends Light> getLights() { return lightMap.values(); }
-
-    @Override
-    public synchronized Light getLight(Integer id) { return lightMap.get(id); }
+    public synchronized Light getLight(Integer id) { return super.getLight(id); }
 
     @Override
     public synchronized long getUptime() { return uptime; }
@@ -98,14 +91,14 @@ class ArduinoCoop implements Coop {
         DoorState doorState = getDoorState(doorStateValue);
         if (doorState != door.getState()) {
             door = new ScheduledDoor(door, doorState);
-            doorMap.put(0, door);
+            updateDoor(door);
         }
 
         int lightStateValue = (response[1] & 0x0F);
         LightState lightState = getLightState(lightStateValue);
         if (lightState != light.getState()) {
             light = new ScheduledLight(light, lightState);
-            lightMap.put(0, light);
+            updateLight(light);
         }
 
         uptime = 0;
@@ -147,6 +140,12 @@ class ArduinoCoop implements Coop {
         }
         arduinoI2C.write(i2cCommand);
     }
+
+    @Override
+    protected synchronized void updateDoor(Door door) { super.updateDoor(door); }
+
+    @Override
+    protected synchronized void updateLight(Light light) { super.updateLight(light); }
 
     /**
      * Converts a door state returned by the firmware to an enum.

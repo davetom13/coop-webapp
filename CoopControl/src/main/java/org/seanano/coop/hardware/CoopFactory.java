@@ -18,7 +18,7 @@ public class CoopFactory {
     private static final long MINIMUM_REFRESH_TIME = 1000;
 
     private static long lastRefreshTime;
-    private static ArduinoCoop coop;
+    private static Coop coop;
     private static ScheduledThreadPoolExecutor executor;
 
     /**

@@ -1,6 +1,7 @@
 package org.seanano.coop.hardware;
 
 import org.seanano.coop.model.AbstractLight;
+import org.seanano.coop.model.Light;
 import org.seanano.coop.model.LightCommand;
 import org.seanano.coop.model.LightState;
 import org.seanano.coop.model.ScheduledCommand;
@@ -25,7 +26,7 @@ class ScheduledLight extends AbstractLight {
      * @param light existing light
      * @param state new state for light
      */
-    ScheduledLight(ScheduledLight light, LightState state) {
+    ScheduledLight(Light light, LightState state) {
         super(light, state);
     }
 
