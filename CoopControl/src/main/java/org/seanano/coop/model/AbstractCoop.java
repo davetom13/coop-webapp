@@ -11,6 +11,7 @@ public abstract class AbstractCoop implements Coop {
     private Integer id;
     private Map<Integer, Door> doorMap = new HashMap<>();
     private Map<Integer, Light> lightMap = new HashMap<>();
+    private Map<Integer, Camera> cameraMap = new HashMap<>();
     
     protected AbstractCoop(Integer id) {
         this.id = id;
@@ -41,6 +42,16 @@ public abstract class AbstractCoop implements Coop {
         return lightMap.get(id);
     }
 
+    @Override
+    public Collection<Camera> getCameras() {
+        return cameraMap.values();
+    }
+
+    @Override
+    public Camera getCamera(Integer id) {
+        return cameraMap.get(id);
+    }
+
     /**
      * Updates the door in this coop.
      * 
@@ -57,5 +68,14 @@ public abstract class AbstractCoop implements Coop {
      */
     protected void updateLight(Light light) {
         lightMap.put(light.getId(), light);
+    }
+
+    /**
+     * Updates the camera in this coop.
+     * 
+     * @param camera updated camera
+     */
+    protected void updateCamera(Camera camera) {
+        cameraMap.put(camera.getId(), camera);
     }
 }

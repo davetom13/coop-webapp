@@ -7,19 +7,20 @@ This web application provides the following functionality:
   * Endpoints for door control (open and close)
   * Endpoints for light control (on and off)
   * Endpoints for current coop state (door, light, embedded uptime)
+  * Endpoints for camera pan/tilt control
 * Scheduling service for the coop to open/close the door and turn a light on and off at scheduled times.
   * Schedule is currently static and not settable via the REST API.
   * Light turns on at civil sunrise and off at civil sunset plus 5 minutes.
   * Door opens at noon and closes at civil sunset.
     * There are potential dangers in the morning so we don't want the door to open too early unless we have verified the area is secure. The noon opening is a failsafe in case we forget to let the chickens out in the morning.  Otherwise, I would have the door open at civil sunrise.
-* Simple web page for viewing current state of coop, viewing streaming webcam, and providing manual controls of light and door. (/CoopControl/)
+* Simple web page for viewing current state of coop, viewing streaming webcam, and providing manual controls of light, door, and camera. (/CoopControl/)
 * REST API documentation (/CoopControl/docs)
 * No security - This web application is a POC and has no security provisions.  Do not make this externally available if you value your chickens or hardware.
 
 ## Software Prerequisites
 * OS on the PI - I'm using [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) Wheezy as I started this project before Jessie was released and it is not externally accessible.
 * Servlet container - for running the web application. Some examples are [Jetty](http://www.eclipse.org/jetty/) or [Tomcat](http://tomcat.apache.org/).
-* [mjpg-streamer](http://sourceforge.net/projects/mjpg-streamer/) - for streaming the camera view back to the browser.  The default web page assumes mjpg-streamer is serving content on port 8080
+* [mjpg-streamer](https://github.com/jacksonliam/mjpg-streamer) - for streaming the camera view back to the browser.  The default web page assumes mjpg-streamer is serving content on port 8080
 
 ## WebApp Software Dependencies
 * [Pi4J](http://pi4j.com/) - Provides Java bindings for access to the I2C bus (among other things) on the Pi
@@ -35,5 +36,5 @@ Note: In order for the sunrise / sunset calculations to be accurate, you will ne
 
 ## Hardware needed
 * Raspberry Pi - I'm using a Model B with satisfactory results.  Using other models may require changing the I2C bus used. A Pi 2 would allow for better performance if mjpg-streamer has to software encode the video from the camera.
-* Camera - I'm using a Logitech C310 USB webcam. I don't currently recommend this model as mjpg-streamer has issues using the raw mjpeg mode so I have to use YUV mode and convert which increases the CPU and USB bus load. It should be fixable as others report this working, but I haven't delved too deep into this yet.
+* Camera - I'm using a Logitech C310 USB webcam. I had problems getting this to work with the original [mjpg-streamer](http://sourceforge.net/projects/mjpg-streamer/) (had to use YUV and software convert which increased the CPU and USB load.) I switched to the fork shown above which is used by [octopi](https://github.com/guysoft/OctoPi) and am now able to run the camera in mjpg mode.
 * Alamode for Raspberry Pi - I'm using this as the interface between the Pi and the controls for the coop. See https://github.com/seanano/coop-alamode for more details on the firmware and hardware needed for this.  I'm also using the RTC on this board for the Pi in case it powers up with no external network connection for NTP.

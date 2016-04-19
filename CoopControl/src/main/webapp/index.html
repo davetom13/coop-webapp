@@ -9,6 +9,8 @@
     <script src="libs/jquery/2.1.4/jquery-min.js" type="text/javascript"></script>
     <script type = "text/javascript">
         var IMG_STREAM = "http://" + window.location.hostname + ":8080/?action=stream";
+        var tiltAngle = 90;
+        var panAngle = 90;
 
         function refreshData() {
             if (!document.hidden) {
@@ -18,6 +20,12 @@
                     $('#lightNext').html(buildNextString(coop.lights[0].nextScheduledCommand));
                     $('#doorStatus').html(coop.doors[0].state);
                     $('#doorNext').html(buildNextString(coop.doors[0].nextScheduledCommand));
+                    
+                    panAngle = coop.cameras[0].panAngle;
+                    $('#panAngle').html(panAngle);
+                    
+                    tiltAngle = coop.cameras[0].tiltAngle;
+                    $('#tiltAngle').html(tiltAngle);
                 });
             }
         }
@@ -90,6 +98,70 @@
                     contentType:'application/json'
                 });
             });
+
+            $("#cameraUp").click(function(event) {
+            	console.log("tiltAngle: " + tiltAngle);
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_TILT_ANGLE","angle":' + (tiltAngle + 5) + '}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraDown").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_TILT_ANGLE","angle":' + (tiltAngle - 5) + '}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraCenter").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_TILT_ANGLE","angle":90},{"command":"UPDATE_PAN_ANGLE","angle":90}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraLeft").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_PAN_ANGLE","angle":' + (panAngle - 5) + '}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraRight").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_PAN_ANGLE","angle":' + (panAngle + 5) + '}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraDoor").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_TILT_ANGLE","angle":30},{"command":"UPDATE_PAN_ANGLE","angle":70}]',
+                    contentType:'application/json'
+                });
+            });
+
+            $("#cameraRoost").click(function(event) {
+                $.ajax({
+                    type:'POST',
+                    url:'rest/coops/0/cameras/0',
+                    data:'[{"command":"UPDATE_TILT_ANGLE","angle":90},{"command":"UPDATE_PAN_ANGLE","angle":110}]',
+                    contentType:'application/json'
+                });
+            });
         });
     </script>
 </head>
@@ -98,7 +170,42 @@
 <img id="camImg" src="" width="640"/>
 
 <P>
-Uptime: <span id="uptime"> </span>
+    Camera:<BR>
+    <table>
+       <tr>
+          <td style="vertical-align:top">
+             Pan Angle: <span id="panAngle">90</span><BR>
+             Tilt Angle: <span id="tiltAngle">90</span><BR>
+          </td>
+          <td style="width:50px">
+          </td>
+          <td style="vertical-align:top">
+             <input type="button" id="cameraDoor" value="Show Door" /><BR><BR>
+             <input type="button" id="cameraRoost" value="Show Roost" /><BR>
+          </td>
+          <td style="width:50px">
+          </td>
+          <td style="vertical-align:top">
+             <table>
+                <tr style="text-align:center">
+                   <td></td>
+                   <td halign="center"><input type="button" id="cameraUp" value="Up" /></td>
+                   <td></td>
+                </tr>
+                <tr style="text-align:center">
+                   <td><input type="button" id="cameraLeft" value="Left" /></td>
+                   <td><input type="button" id="cameraCenter" value="Center" /></td>
+                   <td><input type="button" id="cameraRight" value="Right" /></td>
+                </tr>
+                <tr style="text-align:center">
+                   <td></td>
+                   <td><input type="button" id="cameraDown" value="Down" /></td>
+                   <td></td>
+                </tr>
+             </table>
+          </td>
+       </tr>
+    </table>
 </P>
 
 <P>
@@ -115,6 +222,10 @@ Uptime: <span id="uptime"> </span>
        <input type="button" id="doorClose" value="Close" />
     <BR>
     Next: <span id="doorNext"> </span>
+</P>
+
+<P>
+Uptime: <span id="uptime"> </span>
 </P>
 </body>
 </html>

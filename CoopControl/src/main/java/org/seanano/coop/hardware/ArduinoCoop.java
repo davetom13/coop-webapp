@@ -4,6 +4,8 @@ import java.security.InvalidParameterException;
 import java.util.Collection;
 
 import org.seanano.coop.model.AbstractCoop;
+import org.seanano.coop.model.Camera;
+import org.seanano.coop.model.CameraCommand;
 import org.seanano.coop.model.Door;
 import org.seanano.coop.model.DoorCommand;
 import org.seanano.coop.model.DoorState;
@@ -20,27 +22,37 @@ import com.pi4j.io.i2c.I2CFactory;
  */
 class ArduinoCoop extends AbstractCoop {
     private static final int ARDUINO_I2C_ADDRESS = 0x10;
+    
+    private static final int I2C_WRITE_SIZE = 2;
+    private static final int I2C_WRITE_COMMAND_OFFSET = 0;
+    private static final int I2C_WRITE_DATA_OFFSET = 1;
 
-    private static final int I2C_DOOR_COMMAND_MASK = 0x10;
-    private static final int I2C_LIGHT_COMMAND_MASK = 0x20;
+    private static final byte I2C_DOOR_COMMAND = 0x01;
+    private static final byte I2C_LIGHT_COMMAND = 0x02;
+    private static final byte I2C_PAN_COMMAND = 0x03;
+    private static final byte I2C_TILT_COMMAND = 0x04;
 
-    private static final int I2C_DOOR_COMMAND_OPEN = 0x01;
-    private static final int I2C_DOOR_COMMAND_CLOSE = 0x02;
+    private static final byte I2C_DOOR_COMMAND_OPEN = 0x01;
+    private static final byte I2C_DOOR_COMMAND_CLOSE = 0x02;
 
-    private static final int I2C_LIGHT_COMMAND_ON = 0x01;
-    private static final int I2C_LIGHT_COMMAND_OFF = 0x02;
+    private static final byte I2C_LIGHT_COMMAND_ON = 0x01;
+    private static final byte I2C_LIGHT_COMMAND_OFF = 0x02;
 
-    private static final int DOOR_STATE_UNKNOWN = 0;
-    private static final int DOOR_STATE_CLOSE = 1;
-    private static final int DOOR_STATE_CLOSING = 2;
-    private static final int DOOR_STATE_OPEN = 3;
-    private static final int DOOR_STATE_OPENING = 4;
+    private static final byte DOOR_STATE_UNKNOWN = 0;
+    private static final byte DOOR_STATE_CLOSE = 1;
+    private static final byte DOOR_STATE_CLOSING = 2;
+    private static final byte DOOR_STATE_OPEN = 3;
+    private static final byte DOOR_STATE_OPENING = 4;
 
-    private static final int LIGHT_STATE_ON = 1;
-    private static final int LIGHT_STATE_OFF = 0;
+    private static final byte LIGHT_STATE_ON = 1;
+    private static final byte LIGHT_STATE_OFF = 0;
+    
+    private static final int MIN_PAN_TILT_ANGLE = 0;
+    private static final int MAX_PAN_TILT_ANGLE = 180;
 
     private ScheduledDoor door;
     private ScheduledLight light;
+    private PanTiltCamera camera;
     private I2CDevice arduinoI2C;
     private long uptime;
 
@@ -61,6 +73,9 @@ class ArduinoCoop extends AbstractCoop {
 
         light = new ScheduledLight(0, "Main Light");
         updateLight(light);
+        
+        camera = new PanTiltCamera(0, "Pan/Tilt controllable Camera");
+        updateCamera(camera);
     }
 
     @Override
@@ -76,15 +91,21 @@ class ArduinoCoop extends AbstractCoop {
     public synchronized Light getLight(Integer id) { return super.getLight(id); }
 
     @Override
+    public synchronized Collection<Camera> getCameras() { return super.getCameras(); }
+
+    @Override
+    public synchronized Camera getCamera(Integer id) { return super.getCamera(id); }
+    
+    @Override
     public synchronized long getUptime() { return uptime; }
 
     @Override
     public synchronized void refresh() throws Exception {
-        byte[] response = new byte[7];
+        byte[] response = new byte[9];
         arduinoI2C.read(response, 0, response.length);
-        if (response[0] != 0x01) {
+        if (response[0] != 0x02) {
             throw new Exception(
-                    "Unexpected response version, expected 0x01, saw 0x" + Integer.toHexString(response[0]));
+                    "Unexpected response version, expected 0x02, saw 0x" + Integer.toHexString(response[0]));
         }
 
         int doorStateValue = (response[1] & 0xF0) >> 4;
@@ -107,38 +128,74 @@ class ArduinoCoop extends AbstractCoop {
         uptime |= (response[4] & 0xFFL) << 16;
         uptime |= (response[5] & 0xFFL) << 8;
         uptime |= (response[6] & 0xFFL);
+
+        int panAngle = Byte.toUnsignedInt(response[7]);
+        int tiltAngle = Byte.toUnsignedInt(response[8]);
+        if ((camera.getPanAngle() == null) || (camera.getPanAngle() != panAngle)
+                || (camera.getTiltAngle() == null) != (camera.getTiltAngle() != tiltAngle)) {
+            camera = new PanTiltCamera(camera, panAngle, tiltAngle);
+            updateCamera(camera);
+        }
     }
 
     @Override
     public synchronized void control(Door door, DoorCommand command) throws Exception {
-        byte i2cCommand = I2C_DOOR_COMMAND_MASK;
+        byte[] i2cBytes = new byte[I2C_WRITE_SIZE];
+        i2cBytes[I2C_WRITE_COMMAND_OFFSET] = I2C_DOOR_COMMAND;
         switch (command.getCommand()) {
             case OPEN:
-                i2cCommand |= I2C_DOOR_COMMAND_OPEN;
+                i2cBytes[I2C_WRITE_DATA_OFFSET] = I2C_DOOR_COMMAND_OPEN;
                 break;
             case CLOSE:
-                i2cCommand |= I2C_DOOR_COMMAND_CLOSE;
+                i2cBytes[I2C_WRITE_DATA_OFFSET] = I2C_DOOR_COMMAND_CLOSE;
                 break;
             default:
                 throw new InvalidParameterException("invalid door command: " + command);
         }
-        arduinoI2C.write(i2cCommand);
+        arduinoI2C.write(i2cBytes, 0, i2cBytes.length);
     }
 
     @Override
     public synchronized void control(Light light, LightCommand command) throws Exception {
-        byte i2cCommand = I2C_LIGHT_COMMAND_MASK;
+        byte[] i2cBytes = new byte[I2C_WRITE_SIZE];
+        i2cBytes[I2C_WRITE_COMMAND_OFFSET] = I2C_LIGHT_COMMAND;
         switch (command.getCommand()) {
             case ON:
-                i2cCommand |= I2C_LIGHT_COMMAND_ON;
+                i2cBytes[I2C_WRITE_DATA_OFFSET] = I2C_LIGHT_COMMAND_ON;
                 break;
             case OFF:
-                i2cCommand |= I2C_LIGHT_COMMAND_OFF;
+                i2cBytes[I2C_WRITE_DATA_OFFSET] = I2C_LIGHT_COMMAND_OFF;
                 break;
             default:
                 throw new InvalidParameterException("invalid light command: " + command);
         }
-        arduinoI2C.write(i2cCommand);
+        arduinoI2C.write(i2cBytes, 0, i2cBytes.length);
+    }
+
+    @Override
+    public synchronized void control(Camera camera, CameraCommand[] commands) throws Exception {
+        byte[] i2cBytes = new byte[I2C_WRITE_SIZE];
+        Integer angle;
+
+        for (CameraCommand command : commands) {
+            switch (command.getCommand()) {
+                case UPDATE_PAN_ANGLE:
+                    i2cBytes[I2C_WRITE_COMMAND_OFFSET] = I2C_PAN_COMMAND;
+                    angle = command.getAngle();
+                    validateCameraAngle(angle);
+                    i2cBytes[I2C_WRITE_DATA_OFFSET] = angle.byteValue();
+                    break;
+                case UPDATE_TILT_ANGLE:
+                    i2cBytes[I2C_WRITE_COMMAND_OFFSET] = I2C_TILT_COMMAND;
+                    angle = command.getAngle();
+                    validateCameraAngle(angle);
+                    i2cBytes[I2C_WRITE_DATA_OFFSET] = angle.byteValue();
+                    break;
+                default:
+                    throw new InvalidParameterException("invalid camera command: " + command);
+            }
+            arduinoI2C.write(i2cBytes, 0, i2cBytes.length);
+        }
     }
 
     @Override
@@ -186,4 +243,20 @@ class ArduinoCoop extends AbstractCoop {
                 return LightState.UNKNOWN;
         }
     }
+    
+    /**
+     * Validates a Camera angle.  An angle is considered valid if it is between 0 and 180.
+     * 
+     * @param angle angle to validate
+     * @throws Exception if angle is not valid
+     */
+    private void validateCameraAngle(Integer angle) throws Exception {
+        if (angle == null) {
+            throw new Exception("Camera angle must be specified");
+        }
+        if ((angle < MIN_PAN_TILT_ANGLE) || (angle > MAX_PAN_TILT_ANGLE)) {
+            throw new Exception("Camera angle must be between 0 and 180 (inclusive)");
+        }
+    }
+
 }

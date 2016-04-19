@@ -43,6 +43,22 @@ public interface Coop extends Identifiable {
     public Light getLight(Integer id);
 
     /**
+     * Gets all of the cameras of this coop.
+     * 
+     * @return all of the cameras of this coop
+     */
+    @ApiModelProperty(value = "All of the coop's cameras", required = true)
+    public Collection<Camera> getCameras();
+
+    /**
+     * Gets a specific camera.
+     * 
+     * @param id identifier of camera
+     * @return specified camera, null if not present
+     */
+    public Camera getCamera(Integer id);
+
+    /**
      * Gets the uptime of the embedded firmware in millis.
      * 
      * @return uptime of embedded firmware in millis
@@ -74,4 +90,13 @@ public interface Coop extends Identifiable {
      * @throws Exception if an error occurs performing the command
      */
     public void control(Light door, LightCommand command) throws Exception;
+
+    /**
+     * Performs a control operation on a camera.
+     * 
+     * @param camera camera to control
+     * @param commands commands to perform
+     * @throws Exception if an error occurs performing the command
+     */
+    public void control(Camera camera, CameraCommand[] commands) throws Exception;
 }
